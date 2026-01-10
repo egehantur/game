@@ -1,0 +1,69 @@
+import random
+from ursina import *
+from ursina.prefabs.first_person_controller import FirstPersonController
+
+app = Ursina()
+
+selected_block = 'grass.png'
+
+def add_block(position, texture):
+    new_block = Button(
+        parent=scene,
+        model='cube',
+        texture=texture,
+        position=position,
+        origin_y=0.5,
+        color=color.white,
+        highlight_color=color.white66,
+    )
+    return new_block
+
+def add_tree(pos):
+    x, y, z = pos
+    for i in range(random.randint(2,6)):
+        add_block((x, y+i, z), 'wood.png')
+    for ly in range(2):
+        for lx in range(-1, 2):
+            for lz in range(-1, 2):
+                add_block((x + lx, y + i + ly, z + lz), 'leaves.png')
+
+for i in range(5):
+    rx = random.randint(2, 17)
+    rz = random.randint(2, 17)
+    add_tree((rx, 1, rz))
+for i in range(40):
+    add_block((random.randint(0,14), 1 , random.randint(0,14)), 'grass.png')
+for z in range(20):
+    for x in range(20):
+        add_block((x, 0, z), 'grass.png')
+        add_block((x, -1, z), 'stone.png')
+        add_block((x, -2, z), 'stone.png')
+        add_block((x, -3, z), 'stone.png')
+        add_block((x, -4, z), 'noise.png')
+
+player = FirstPersonController()
+Sky()
+
+def input(key):
+    global selected_block
+
+    if key == '1':
+        selected_block = 'grass.png'
+        print("Grass")
+    if key == '2':
+        selected_block = 'stone.png'
+        print("Stone")
+    if key == '3':
+        selected_block = 'brick.png'
+        print("Brick")
+
+    if key == 'left mouse down':
+        if mouse.hovered_entity:
+            add_block(mouse.hovered_entity.position + mouse.normal, selected_block)
+
+    if key == 'right mouse down':
+        if mouse.hovered_entity:
+            if mouse.hovered_entity.y > -4:
+                destroy(mouse.hovered_entity)
+
+app.run()
