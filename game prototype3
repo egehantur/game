@@ -1,0 +1,403 @@
+from ursina import *
+from ursina.prefabs.first_person_controller import FirstPersonController
+import random
+
+app = Ursina()
+
+world_data = {}
+rendered_blocks = {}
+
+blocks = [0,1,2,3,4,5]
+selected_index = 0
+
+gc = 64
+sc = 64
+bc = 64
+wc = 64
+lc = 64
+nc = 64
+
+view_distance = 8
+player = FirstPersonController()
+coordinate_text = Text(text='', position=(-0.8, 0.45), scale=1.5)
+
+Sky()
+
+selected_block = None
+
+Text.default_resolution = 1080 * Text.size
+
+def item_left():
+    global gcT
+    global bcT
+    global wcT
+    global lcT
+    global ncT
+    global scT
+
+    gcT = Text(
+        text = gc,
+        position=(-0.5, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+
+    scT = Text(
+        text = sc,
+        position=(-0.3, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+    bcT = Text(
+        text = bc,
+        position=(-0.1, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+    wcT = Text(
+        text = wc,
+        position=(0.1, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+    lcT = Text(
+        text = lc,
+        position=(0.3, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+    ncT = Text(
+        text = nc,
+        position=(0.5, -0.45),
+        origin=(0, 0),
+        scale = 2,
+        color = color.white
+    )
+
+item_left()
+
+def destroy_all():
+    destroy(gcT)
+    destroy(scT)
+    destroy(bcT)
+    destroy(wcT)
+    destroy(lcT)
+    destroy(ncT)
+
+eT = Text(
+    text='Grass',
+    position=(-0.5, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+zT = Text(
+    text='Stone',
+    position=(-0.3, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+dT = Text(
+    text='Brick',
+    position=(-0.1, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+vT = Text(
+    text='Wood',
+    position=(0.1, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+fT = Text(
+    text='Leaves',
+    position=(0.3, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+sT = Text(
+    text='Bedrock',
+    position=(0.5, -0.4),
+    origin=(0, 0),
+    scale = 2
+)
+
+def add_tree(pos):
+    x, y, z = pos
+    height = random.randint(3, 5)
+
+    for i in range(height):
+        block_pos = (x, y + i, z)
+        if block_pos not in world_data:
+            world_data[block_pos] = 'wood.png'
+            render_block(block_pos, 'wood.png')
+
+    for ly in range(2):
+        for lx in range(-2, 3):
+            for lz in range(-2, 3):
+                leaf_pos = (x + lx, y + height + ly, z + lz)
+                if leaf_pos not in world_data:
+                    world_data[leaf_pos] = 'leaves.png'
+                    render_block(leaf_pos, 'leaves.png')
+    for ly2 in range(1):
+        for lx2 in range(-1, 2):
+            for lz2 in range(-1, 2):
+                leaf_pos2 = (x + lx2, y + height + 2, z + lz2)
+                if leaf_pos2 not in world_data:
+                    world_data[leaf_pos2] = 'leaves.png'
+                    render_block(leaf_pos2, 'leaves.png')
+
+def add_house(pos):
+    bx, by, bz = pos
+    width, height, depth = 5, 5, 5
+
+    for x_off in range(width):
+        for y_off in range(height):
+            for z_off in range(depth):
+                current_pos = (bx + x_off, by + y_off, bz + z_off)
+
+                if (x_off == 0 or x_off == width - 1 or
+                        y_off == 0 or y_off == height - 1 or
+                        z_off == 0 or z_off == depth - 1):
+
+                    if not (z_off == 0 and x_off == 2 and (y_off == 1 or y_off == 2)):
+                        world_data[current_pos] = 'brick.png'
+                        render_block(current_pos, 'brick.png')
+                else:
+                    world_data[current_pos] = 'air'
+
+
+def add_mountain(pos):
+    mx, my, mz = pos
+    height = random.randint(3, 5)
+
+    lx = 0
+    ly = 0
+
+    for h in range(height):
+        layer = (height - h) * 2 - 1
+
+        for x in range(layer):
+            for z in range(layer):
+                layer_pos = (mx + x + lx, my + ly, mz + z + lx)
+
+                if layer_pos not in world_data:
+                    world_data[layer_pos] = 'grass_block.png'
+                    render_block(layer_pos, 'grass_block.png')
+
+        ly += 1
+        lx += 1
+
+def render_block(pos, tex):
+    if pos not in rendered_blocks:
+        block = Button(
+            parent=scene,
+            model='cube',
+            texture=tex,
+            position=pos,
+            origin_y=0.5,
+            color=color.white,
+            highlight_color=color.white66
+        )
+        rendered_blocks[pos] = block
+
+"""""
+def add_passable_breakable_block(pos, tex):
+    if pos not in rendered_blocks:
+        new_block = Button(
+            parent=scene,
+            model='cube',
+            texture=tex,
+            position=pos,
+            scale = 1,
+            origin_y=0.5,
+            collider='box',
+            collision = False,
+            unlit = True,
+            double_sided = True,
+        )
+        rendered_blocks[pos] = new_block
+
+def add_grass(pos):
+    if pos not in world_data:
+        world_data[pos] = 'grass.png'
+        add_passable_breakable_block(pos, 'grass.png')
+        """
+
+def update():
+
+    px, py, pz = int(player.x), int(player.y), int(player.z)
+    coordinate_text.text = f'Position: {px}, {py}, {pz}'
+
+    for z in range(pz - view_distance, pz + view_distance):
+        for x in range(px - view_distance, px + view_distance):
+
+            for y in range(-4, 10):
+                pos = (x, y, z)
+
+                if world_data.get(pos) == 'air':
+                    continue
+
+                if pos in world_data:
+                    render_block(pos, world_data[pos])
+
+                else:
+
+
+                    if y == 0:
+                        world_data[pos] = 'grass_block.png'
+                        render_block(pos, 'grass_block.png')
+
+                        if random.random() < 0.02:
+                            add_tree((x, 1, z))
+                        elif random.random() < 0.001:
+                            add_house((x, 0, z))
+                        elif random.random() < 0.001:
+                            add_mountain((x, 1, z))
+                        """""
+                        elif random.random() < 0.05:
+                            add_grass((x, 1, z))
+                            """
+
+                    elif -3 <= y < 0:
+                        world_data[pos] = 'stone.png'
+                    elif y == -4:
+                        world_data[pos] = 'noise.png'
+
+    temp_rendered = list(rendered_blocks.keys())
+    for pos in temp_rendered:
+        if abs(pos[0] - px) > view_distance + 2 or abs(pos[2] - pz) > view_distance + 2:
+            destroy(rendered_blocks[pos])
+            del rendered_blocks[pos]
+
+def update_inventory(index):
+    global selected_block, selected_index
+    selected_index = index
+    selected_index = blocks[index]
+
+def add_block(tex):
+    new_pos = tuple(mouse.hovered_entity.position + mouse.normal)
+    world_data[new_pos] = tex
+    render_block(new_pos, tex)
+    destroy_all()
+
+def input(key):
+    global selected_block
+    global selected_index
+    global gc
+    global sc
+    global bc
+    global wc
+    global lc
+    global nc
+
+    if key == 'scroll up':
+        selected_index = (selected_index + 1) % len(blocks)
+        update_inventory(selected_index)
+
+    if key == 'scroll down':
+        selected_index = (selected_index - 1) % len(blocks)
+        update_inventory(selected_index)
+
+    if key == '1' or selected_index == 0:
+        selected_block = 'grass_block.png'
+        eT.color = color.red
+        zT.color = color.white
+        dT.color = color.white
+        vT.color = color.white
+        fT.color = color.white
+        sT.color = color.white
+    if key == '2' or selected_index == 1:
+        selected_block = 'stone.png'
+        zT.color = color.red
+        eT.color = color.white
+        dT.color = color.white
+        vT.color = color.white
+        fT.color = color.white
+        sT.color = color.white
+    if key == '3' or selected_index == 2:
+        selected_block = 'brick.png'
+        dT.color = color.red
+        eT.color = color.white
+        zT.color = color.white
+        vT.color = color.white
+        fT.color = color.white
+        sT.color = color.white
+    if key == '4' or selected_index == 3:
+        selected_block = 'wood.png'
+        vT.color = color.red
+        eT.color = color.white
+        zT.color = color.white
+        dT.color = color.white
+        fT.color = color.white
+        sT.color = color.white
+    if key == '5' or selected_index == 4:
+        selected_block = 'leaves.png'
+        fT.color = color.red
+        eT.color = color.white
+        zT.color = color.white
+        dT.color = color.white
+        vT.color = color.white
+        sT.color = color.white
+    if key == '6' or selected_index == 5:
+        selected_block = 'noise.png'
+        sT.color = color.red
+        eT.color = color.white
+        zT.color = color.white
+        dT.color = color.white
+        vT.color = color.white
+        fT.color = color.white
+
+    if key == 'left mouse down':
+        if selected_block is not None and mouse.hovered_entity:
+            if key == '1' or selected_index == 0:
+                if gc > 0:
+                    add_block('grass_block.png')
+                    gc -= 1
+            if key == '2' or selected_index == 1:
+                if sc > 0:
+                    add_block('stone.png')
+                    sc -= 1
+            if key == '3' or selected_index == 2:
+                if bc > 0:
+                    add_block('brick.png')
+                    bc -= 1
+            if key == '4' or selected_index == 3:
+                if wc > 0:
+                    add_block('wood.png')
+                    wc -= 1
+            if key == '5' or selected_index == 4:
+                if lc > 0:
+                    add_block('leaves.png')
+                    lc -= 1
+            if key == '6' or selected_index == 5:
+                if nc > 0:
+                    add_block('noise.png')
+                    nc -= 1
+            item_left()
+
+    if key == 'right mouse down' and mouse.hovered_entity:
+        if mouse.hovered_entity.y > -4:
+            pos = tuple(mouse.hovered_entity.position)
+
+            world_data[pos] = 'air'
+
+            if pos in rendered_blocks:
+                destroy(rendered_blocks[pos])
+                del rendered_blocks[pos]
+
+app.run()
